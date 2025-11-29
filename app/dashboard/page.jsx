@@ -60,11 +60,23 @@ function parseGeographyWKB(hex) {
   }
 }
 
+function clearRoute() {
+  setRouteTarget(null)
+}
+
+function handleClearRoute()
+{
+  setClearRouteTrigger(Date.now())
+}
+
 export default function DashboardPage() {
   const [profile, setProfile] = useState(null)
   const [userPos, setUserPos] = useState(null)
   const [radius, setRadius] = useState(1000)
   const [products, setProducts] = useState([])
+  const [routeTarget, setRouteTarget] = useState(null)
+  const [clearRoute, setClearRoute] = useState(null)
+  const [clearRouteTrigger, setClearRouteTrigger] = useState(false)
 
   const router = useRouter()
 
@@ -124,12 +136,9 @@ export default function DashboardPage() {
   function handleDetail(id) {
     router.push(`/product/${id}`)
   }
-
+  
   function handleRoute(position) {
-    window.open(
-      `https://www.google.com/maps/dir/${userPos[0]},${userPos[1]}/${position[0]},${position[1]}`,
-      "_blank"
-    )
+    setRouteTarget(position)
   }
 
   return (
@@ -171,6 +180,13 @@ export default function DashboardPage() {
         <div className="hidden">
            <CheckLocation />
         </div>
+
+        <button
+          onClick={() => {setClearRoute(true); setRouteTarget(null)}}
+          className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-lg z-500"
+        >
+          Hapus Rute
+        </button>
 
         {/* Logout Button */}
         <div className="mt-auto pt-6 border-t border-gray-100">
@@ -227,6 +243,9 @@ export default function DashboardPage() {
               .filter(Boolean)}
             onDetail={handleDetail}
             onRoute={handleRoute}
+            routeTarget={routeTarget}
+            clearRoute={clearRoute}
+            //clearRouteTrigger={clearRouteTrigger}
           />
         </div>
         
