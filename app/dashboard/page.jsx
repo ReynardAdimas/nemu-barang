@@ -41,6 +41,25 @@ function parsePointWKT(wkt) {
   }
 }
 
+function parseGeographyWKB(hex) {
+  if(!hex || typeof hex !== "string") return null; 
+
+  try {
+    const buffer = Buffer.from(hex, "hex"); 
+    const littleEndiean = buffer[0]==1; 
+    const readFloat64 = (offset) => 
+      littleEndiean 
+      ? buffer.readDoubleLE(offset)
+      : buffer.readDoubleBE(offset) 
+    const lon = readFloat64(9); 
+    const lat = readFloat64(17) 
+    return {lat, lon}
+  } catch (error) {
+    console.error("Gagal parse geografi:", error)
+    return null;
+  }
+}
+
 export default function DashboardPage() {
   const [profile, setProfile] = useState(null)
   const [userPos, setUserPos] = useState(null)
@@ -172,7 +191,7 @@ export default function DashboardPage() {
       <main className="flex-1 relative bg-gray-100">
         
         {/* Floating Search Bar (Visual Only sesuai gambar) */}
-        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-[400] w-full max-w-lg px-4">
+        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-400 w-full max-w-lg px-4">
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <SearchIcon />
@@ -192,7 +211,7 @@ export default function DashboardPage() {
             userPosition={userPos}
             markers={products
               .map((p) => {
-                const loc = parsePointWKT(p.location)
+                const loc = parseGeographyWKB(p.location)
                 if (!loc) return null
 
                 return {
