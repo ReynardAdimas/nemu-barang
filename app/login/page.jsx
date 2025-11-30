@@ -24,7 +24,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
       {/* Navbar / Header */}
-      <header className="w-full px-6 py-4 flex justify-between items-center max-w-7xl mx-auto w-full">
+      <header className="px-6 py-4 flex justify-between items-center max-w-7xl mx-auto w-full">
         <div className="m-5 flex items-center gap-2">
           {/* Logo Icon */}
           <div className="bg-blue-600 p-1 rounded-sm transform rotate-45">

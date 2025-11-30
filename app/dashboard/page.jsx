@@ -41,11 +41,42 @@ function parsePointWKT(wkt) {
   }
 }
 
+function parseGeographyWKB(hex) {
+  if(!hex || typeof hex !== "string") return null; 
+
+  try {
+    const buffer = Buffer.from(hex, "hex"); 
+    const littleEndiean = buffer[0]==1; 
+    const readFloat64 = (offset) => 
+      littleEndiean 
+      ? buffer.readDoubleLE(offset)
+      : buffer.readDoubleBE(offset) 
+    const lon = readFloat64(9); 
+    const lat = readFloat64(17) 
+    return {lat, lon}
+  } catch (error) {
+    console.error("Gagal parse geografi:", error)
+    return null;
+  }
+}
+
+function clearRoute() {
+  setRouteTarget(null)
+}
+
+function handleClearRoute()
+{
+  setClearRouteTrigger(Date.now())
+}
+
 export default function DashboardPage() {
   const [profile, setProfile] = useState(null)
   const [userPos, setUserPos] = useState(null)
   const [radius, setRadius] = useState(1000)
   const [products, setProducts] = useState([])
+  const [routeTarget, setRouteTarget] = useState(null)
+  const [clearRoute, setClearRoute] = useState(null)
+  const [clearRouteTrigger, setClearRouteTrigger] = useState(false)
 
   const router = useRouter()
 
@@ -105,12 +136,9 @@ export default function DashboardPage() {
   function handleDetail(id) {
     router.push(`/product/${id}`)
   }
-
+  
   function handleRoute(position) {
-    window.open(
-      `https://www.google.com/maps/dir/${userPos[0]},${userPos[1]}/${position[0]},${position[1]}`,
-      "_blank"
-    )
+    setRouteTarget(position)
   }
 
   return (
@@ -153,6 +181,13 @@ export default function DashboardPage() {
            <CheckLocation />
         </div>
 
+        <button
+          onClick={() => {setClearRoute(true); setRouteTarget(null)}}
+          className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-lg z-500"
+        >
+          Hapus Rute
+        </button>
+
         {/* Logout Button */}
         <div className="mt-auto pt-6 border-t border-gray-100">
           <button
@@ -172,7 +207,7 @@ export default function DashboardPage() {
       <main className="flex-1 relative bg-gray-100">
         
         {/* Floating Search Bar (Visual Only sesuai gambar) */}
-        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-[400] w-full max-w-lg px-4">
+        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-400 w-full max-w-lg px-4">
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <SearchIcon />
@@ -192,7 +227,7 @@ export default function DashboardPage() {
             userPosition={userPos}
             markers={products
               .map((p) => {
-                const loc = parsePointWKT(p.location)
+                const loc = parseGeographyWKB(p.location)
                 if (!loc) return null
 
                 return {
@@ -208,6 +243,9 @@ export default function DashboardPage() {
               .filter(Boolean)}
             onDetail={handleDetail}
             onRoute={handleRoute}
+            routeTarget={routeTarget}
+            clearRoute={clearRoute}
+            //clearRouteTrigger={clearRouteTrigger}
           />
         </div>
         
