@@ -171,9 +171,6 @@ export default function DashboardPage() {
         <div className="hidden">
            <CheckLocation />
         </div>
-
-
-
         <div className="mt-auto pt-6 border-t border-gray-100">
           <button
             onClick={async () => {
