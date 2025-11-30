@@ -24,7 +24,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
       {/* Navbar / Header */}
-      <header className="w-full px-6 py-4 flex justify-between items-center max-w-7xl mx-auto w-full">
+      <header className="px-6 py-4 flex justify-between items-center max-w-7xl mx-auto w-full">
         <div className="m-5 flex items-center gap-2">
           {/* Logo Icon */}
           <div className="bg-blue-600 p-1 rounded-sm transform rotate-45">
@@ -53,7 +53,7 @@ export default function LoginPage() {
           <div className="w-full max-w-md mx-auto lg:mx-0">
             <div className="mb-8">
               <h2 className="text-4xl font-extrabold text-gray-900 mb-3">Selamat Datang di Nemu Barang!</h2>
-              <p className="text-gray-500">Masuk untuk menemukan barang yang kamu cari di sekitarmu.</p>
+              <p className="text-gray-500">Masuk untuk menemukan barang di sekitarmu.</p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-5">
