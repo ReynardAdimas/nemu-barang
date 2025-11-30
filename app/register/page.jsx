@@ -129,6 +129,7 @@ export default function RegisterPage() {
             <label className="block text-sm font-medium text-gray-900">No. Telepon</label>
             <input
               required
+              type="tel"
               placeholder="Contoh: 087837237127"
               value={form.phone }
               onChange={e=>setForm({...form, phone: e.target.value})}
