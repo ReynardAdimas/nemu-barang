@@ -130,9 +130,9 @@ export default function RegisterPage() {
             <input
               required
               type="tel"
-              placeholder="Contoh: 087837237127"
-              value={form.phone }
-              onChange={e=>setForm({...form, phone: e.target.value})}
+              placeholder="Contoh: 087837229293"
+              value={form.full_name}
+              onChange={e=>setForm({...form, full_name: e.target.value})}
               className="w-full p-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent placeholder-gray-400 text-gray-900"
             />
           </div>
