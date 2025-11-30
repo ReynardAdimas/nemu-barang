@@ -6,6 +6,7 @@ import L from "leaflet"
 import { useEffect, useRef } from "react"
 import "leaflet-routing-machine"
 import "leaflet-routing-machine/dist/leaflet-routing-machine.css"
+import { useRouter } from "next/router"
 
 const productIcon = new L.Icon({
   iconUrl: "/markers/marker-red.png",
@@ -85,7 +86,20 @@ function RoutingControl({ userPosition, routeTarget, clearRoute }) {
   )
 }
 
-export default function MapView({ center, userPosition, markers, onDetail, onRoute, routeTarget, clearRoute }) {
+export default function MapView({ center, userPosition, markers, onDetail, onRoute, routeTarget, clearRoute, onContactSeller }) { 
+  // const router = useRouter()
+
+  // function handleChatWA(m) {
+  //   if (!m.waNumber) {
+  //     router.push("/no-whatsapp")
+  //     return
+  //   }
+
+  //   const message = `Halo ${m.sellerName}, saya tertarik dengan barang: ${m.text}.`
+  //   const waURL = `https://wa.me/${m.waNumber}?text=${encodeURIComponent(message)}`
+
+  //   window.open(waURL, "_blank")
+  // }
   return (
     <MapContainer center={center} zoom={15} style={{ height: "100%", width: "100%" }}>
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
@@ -102,11 +116,14 @@ export default function MapView({ center, userPosition, markers, onDetail, onRou
         <Marker key={m.id} position={m.position} icon={productIcon}>
           <Popup>
             <p className="font-semibold">{m.text}</p>
-            <button
+            <p className="text-sm text-gray-700 mb-2">
+              Penjual: <span className="font-medium">{m.sellerName}</span>
+            </p> 
+              <button
               className="px-2 py-1 bg-blue-600 text-white rounded w-full mb-2"
-              onClick={() => onDetail(m.id)}
+              onClick={() => onContactSeller(m.id)}
             >
-              Detail
+              Hubungi Penjual
             </button>
             <button
               className="px-2 py-1 bg-green-600 text-white rounded w-full"

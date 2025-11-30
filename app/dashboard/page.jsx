@@ -102,7 +102,8 @@ export default function DashboardPage() {
 
     async function loadProducts() {
       const [lat, lon] = userPos
-      const data = await getProductsByRadius(lat, lon, radius)
+      const data = await getProductsByRadius(lat, lon, radius) 
+      
       setProducts(data)
     }
 
@@ -136,10 +137,40 @@ export default function DashboardPage() {
   function handleDetail(id) {
     router.push(`/product/${id}`)
   }
-  
+
+  function handleContactSeller(product) {
+    if(!product.phone) {
+      return router.push("error/no-whatsapp")
+    }
+    
+    window.open(`https://wa.me/${product.phone}`, "_blank")
+  }
+
   function handleRoute(position) {
     setRouteTarget(position)
   }
+  async function onContactSeller(productId) {
+  const { data, error } = await supabase
+    .from("products")
+    .select("id, name, profiles:owner_id(full_name, phone)")
+    .eq("id", productId)
+    .single()
+
+  if (error || !data) {
+    router.push("/error")
+    return
+  }
+
+  const phone = data.profiles?.phone
+
+  if (!phone) {
+    router.push("/error")
+    return
+  }
+
+  const wa = `https://wa.me/${phone}?text=Halo%20saya%20tertarik%20dengan%20produk%20${encodeURIComponent(data.name)}`
+  window.open(wa, "_blank")
+}
 
   return (
     <div className="flex h-screen bg-white overflow-hidden font-sans">
@@ -237,7 +268,8 @@ export default function DashboardPage() {
                   // Mengirim data tambahan jika MapView mendukungnya, 
                   // atau text akan menjadi label standar
                   price: p.price, 
-                  image: p.image_url 
+                  image: p.image_url, 
+                  waNumber : p.phone
                 }
               })
               .filter(Boolean)}
@@ -245,6 +277,7 @@ export default function DashboardPage() {
             onRoute={handleRoute}
             routeTarget={routeTarget}
             clearRoute={clearRoute}
+            onContactSeller={onContactSeller}
             //clearRouteTrigger={clearRouteTrigger}
           />
         </div>
