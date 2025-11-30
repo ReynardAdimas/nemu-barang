@@ -53,7 +53,7 @@ export default function LoginPage() {
           <div className="w-full max-w-md mx-auto lg:mx-0">
             <div className="mb-8">
               <h2 className="text-4xl font-extrabold text-gray-900 mb-3">Selamat Datang di Nemu Barang!</h2>
-              <p className="text-gray-500">Masuk untuk menemukan barang yang kamu cari di sekitarmu.</p>
+              <p className="text-gray-500">Masuk untuk menemukan barang di sekitarmu.</p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-5">
