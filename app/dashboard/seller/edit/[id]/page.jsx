@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { supabase } from "../../../../lib/supabaseClient" // Sesuaikan path jika perlu
+import { supabase } from "@/lib/supabaseClient"
 
 export default function EditProductPage(props) {
   const { id } = use(props.params)
