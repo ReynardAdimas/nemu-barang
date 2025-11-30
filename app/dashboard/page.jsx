@@ -8,7 +8,7 @@ import CheckLocation from '../components/CheckLocation'
 import { getProductsByRadius } from "../../lib/getProductsByRadius"
 import Link from 'next/link'
 
-// Icon library (menggunakan SVG inline agar tidak perlu install library tambahan)
+// Icon Search
 const SearchIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-400">
     <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
@@ -22,24 +22,6 @@ const LogoutIcon = () => (
 )
 
 const MapView = dynamic(() => import("../components/MapView"), { ssr: false })
-
-// Convert POINT format
-function parsePointWKT(wkt) {
-  if (!wkt || typeof wkt !== "string") return null
-  try {
-    const cleaned = wkt.replace("POINT(", "").replace(")", "").trim()
-    const parts = cleaned.split(" ")
-    if (parts.length !== 2) return null
-
-    const lon = parseFloat(parts[0])
-    const lat = parseFloat(parts[1])
-    if (isNaN(lat) || isNaN(lon)) return null
-
-    return { lat, lon }
-  } catch {
-    return null
-  }
-}
 
 function parseGeographyWKB(hex) {
   if(!hex || typeof hex !== "string") return null; 
@@ -60,27 +42,20 @@ function parseGeographyWKB(hex) {
   }
 }
 
-function clearRoute() {
-  setRouteTarget(null)
-}
-
-function handleClearRoute()
-{
-  setClearRouteTrigger(Date.now())
-}
-
 export default function DashboardPage() {
   const [profile, setProfile] = useState(null)
   const [userPos, setUserPos] = useState(null)
   const [radius, setRadius] = useState(1000)
   const [products, setProducts] = useState([])
+  
+  // State untuk Pencarian
+  const [searchQuery, setSearchQuery] = useState("")
+  
   const [routeTarget, setRouteTarget] = useState(null)
   const [clearRoute, setClearRoute] = useState(null)
-  const [clearRouteTrigger, setClearRouteTrigger] = useState(false)
 
   const router = useRouter()
 
-  // Redirect jika penjual
   useEffect(() => {
     if (!profile) return
     if (profile.role === 'penjual') {
@@ -88,7 +63,6 @@ export default function DashboardPage() {
     }
   }, [profile])
 
-  // GPS user
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
       (pos) => setUserPos([pos.coords.latitude, pos.coords.longitude]),
@@ -96,26 +70,22 @@ export default function DashboardPage() {
     )
   }, [])
 
-  // Load product by radius
   useEffect(() => {
     if (!userPos) return
 
     async function loadProducts() {
       const [lat, lon] = userPos
       const data = await getProductsByRadius(lat, lon, radius) 
-      
       setProducts(data)
     }
 
     loadProducts()
   }, [userPos, radius])
 
-  // Load profile
   useEffect(() => {
     async function loadProfile() {
       const { data } = await supabase.auth.getUser()
       const user = data.user
-
       if (!user) return router.push("/login")
 
       const { data: profileData } = await supabase
@@ -126,69 +96,60 @@ export default function DashboardPage() {
 
       setProfile(profileData)
     }
-
     loadProfile()
   }, [])
 
   if (!profile) return <div className="flex h-screen items-center justify-center bg-gray-50 text-gray-500">Loading Dashboard...</div>
   if (!userPos) return <div className="flex h-screen items-center justify-center bg-gray-50 text-gray-500">Mengambil lokasi Anda...</div>
 
-  // === HANDLER UNTUK POPUP BUTTON ===
   function handleDetail(id) {
     router.push(`/product/${id}`)
-  }
-
-  function handleContactSeller(product) {
-    if(!product.phone) {
-      return router.push("error/no-whatsapp")
-    }
-    
-    window.open(`https://wa.me/${product.phone}`, "_blank")
   }
 
   function handleRoute(position) {
     setRouteTarget(position)
   }
+
   async function onContactSeller(productId) {
-  const { data, error } = await supabase
-    .from("products")
-    .select("id, name, profiles:owner_id(full_name, phone)")
-    .eq("id", productId)
-    .single()
+    const { data, error } = await supabase
+      .from("products")
+      .select("id, name, profiles:owner_id(full_name, phone)")
+      .eq("id", productId)
+      .single()
 
-  if (error || !data) {
-    router.push("/error")
-    return
+    if (error || !data) {
+      router.push("/error")
+      return
+    }
+
+    const phone = data.profiles?.phone
+    if (!phone) {
+      router.push("/error")
+      return
+    }
+
+    const wa = `https://wa.me/${phone}?text=Halo%20saya%20tertarik%20dengan%20produk%20${encodeURIComponent(data.name)}`
+    window.open(wa, "_blank")
   }
 
-  const phone = data.profiles?.phone
-
-  if (!phone) {
-    router.push("/error")
-    return
-  }
-
-  const wa = `https://wa.me/${phone}?text=Halo%20saya%20tertarik%20dengan%20produk%20${encodeURIComponent(data.name)}`
-  window.open(wa, "_blank")
-}
+  // LOGIKA FILTER PENCARIAN
+  const filteredProducts = products.filter((product) => 
+    product.name.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   return (
     <div className="flex h-screen bg-white overflow-hidden font-sans">
       
       {/* === SIDEBAR (KIRI) === */}
       <aside className="w-80 bg-white border-r border-gray-100 flex flex-col p-8 z-20 shadow-sm relative">
-        
-        {/* Profile Header */}
         <div className="flex items-center gap-4 mb-12">
           <div>
             <h2 className="font-bold text-gray-900 leading-tight">NemuBarang</h2>
-            <p className="text-sm text-gray-500">Temukan Barang Bekas yang Anda Mau</p>
-            {/* Menampilkan nama user kecil di bawah tagline jika perlu */}
+            <p className="text-sm text-gray-500">Temukan Barang Bekas</p>
             <p className="text-xs text-blue-600 mt-1 font-medium">{profile.full_name}</p>
           </div>
         </div>
 
-        {/* Radius Controls */}
         <div className="flex-1">
           <div className="mb-2 flex justify-between items-end">
             <h3 className="font-semibold text-gray-900">Radius Pencarian</h3>
@@ -198,7 +159,7 @@ export default function DashboardPage() {
             <input
               type="range"
               min="100"
-              max="10000" // Diperbesar sedikit agar slider terasa lebih panjang
+              max="10000"
               step="100"
               value={radius}
               onChange={(e) => setRadius(Number(e.target.value))}
@@ -207,19 +168,20 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Komponen CheckLocation disembunyikan tapi tetap render logic-nya */}
         <div className="hidden">
            <CheckLocation />
         </div>
 
-        <button
-          onClick={() => {setClearRoute(true); setRouteTarget(null)}}
-          className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-lg z-500"
-        >
-          Hapus Rute
-        </button>
+        {/* Tombol Hapus Rute */}
+        {routeTarget && (
+          <button
+            onClick={() => {setClearRoute(true); setRouteTarget(null)}}
+            className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg mb-4 transition-colors"
+          >
+            Hapus Rute
+          </button>
+        )}
 
-        {/* Logout Button */}
         <div className="mt-auto pt-6 border-t border-gray-100">
           <button
             onClick={async () => {
@@ -237,26 +199,30 @@ export default function DashboardPage() {
       {/* === MAP AREA (KANAN) === */}
       <main className="flex-1 relative bg-gray-100">
         
-        {/* Floating Search Bar (Visual Only sesuai gambar) */}
-        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-400 w-full max-w-lg px-4">
+        {/* === SEARCH BAR INPUT (TERLETAK DI ATAS MAP) === */}
+        {/* z-[1000] penting agar input berada DI ATAS peta Leaflet */}
+        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-[1000] w-full max-w-md px-4">
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <SearchIcon />
             </div>
             <input 
               type="text" 
-              placeholder="Cari barang seperti meja, sepeda..." 
-              className="block w-full pl-12 pr-4 py-3.5 bg-white border-0 rounded-xl text-gray-900 shadow-lg placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 sm:text-sm"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari barang (meja, kursi...)" 
+              className="block w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-full text-gray-900 shadow-xl placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
             />
           </div>
         </div>
 
         {/* Map Container */}
-        <div className="w-full h-full">
+        <div className="w-full h-full z-0">
           <MapView
             center={userPos}
             userPosition={userPos}
-            markers={products
+            // Gunakan filteredProducts agar marker berubah sesuai search
+            markers={filteredProducts
               .map((p) => {
                 const loc = parseGeographyWKB(p.location)
                 if (!loc) return null
@@ -265,8 +231,6 @@ export default function DashboardPage() {
                   id: p.id,
                   position: [loc.lat, loc.lon],
                   text: p.name,
-                  // Mengirim data tambahan jika MapView mendukungnya, 
-                  // atau text akan menjadi label standar
                   price: p.price, 
                   image: p.image_url, 
                   waNumber : p.phone
@@ -278,20 +242,8 @@ export default function DashboardPage() {
             routeTarget={routeTarget}
             clearRoute={clearRoute}
             onContactSeller={onContactSeller}
-            //clearRouteTrigger={clearRouteTrigger}
           />
         </div>
-        
-        {/* Custom Zoom Controls Placeholder (Visual) 
-            Note: Biasanya MapView (Leaflet) punya kontrol sendiri, 
-            tapi ini untuk meniru gaya tombol bulat putih di pojok kanan bawah gambar */}
-        {/* <div className="absolute bottom-8 right-8 z-[400] flex flex-col gap-2">
-           <button className="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:bg-gray-50 font-bold text-xl">+</button>
-           <button className="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:bg-gray-50 font-bold text-xl">-</button>
-           <button className="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-gray-700 hover:bg-gray-50 mt-2">
-             <div className="w-4 h-4 border-2 border-gray-600 rounded-full"></div>
-           </button>
-        </div> */}
 
       </main>
     </div>
